@@ -49,6 +49,7 @@ target_link_libraries(
   OpenSSL::Crypto
   ${CMAKE_DL_LIBS}
   rt
+  CURL::libcurl
 )
 target_include_directories(
   irods_server_re
