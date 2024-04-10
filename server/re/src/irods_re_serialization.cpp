@@ -1238,7 +1238,8 @@ namespace irods::re_serialization
         }
 
         for (auto it = temporary.begin(); it != temporary.end();) {
-            auto node = temporary.extract(it++);
+            auto it_position = it++;
+            auto node = temporary.extract(it_position);
             node.key() = overwrite ? prefix : prefix + node.key();
             _out.insert(std::move(node));
         }
