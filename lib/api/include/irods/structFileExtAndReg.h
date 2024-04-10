@@ -13,6 +13,10 @@ typedef struct StructFileExtAndRegInp {
 } structFileExtAndRegInp_t;
 #define StructFileExtAndRegInp_PI "str objPath[MAX_NAME_LEN]; str collection[MAX_NAME_LEN]; int oprType; int flags; struct KeyValPair_PI;"
 
+#ifdef __cplusplus
+#  include <boost/describe.hpp>
+BOOST_DESCRIBE_STRUCT(StructFileExtAndRegInp, (), (objPath, collection, oprType, flags, condInput))
+#endif
 
 #ifdef __cplusplus
 extern "C"

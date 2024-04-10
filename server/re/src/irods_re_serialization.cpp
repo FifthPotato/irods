@@ -7,6 +7,11 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/range/adaptors.hpp>
 
+#include <boost/describe.hpp>
+#include <boost/mp11.hpp>
+
+#include <type_traits>
+
 #include <fmt/format.h>
 
 namespace
@@ -35,6 +40,21 @@ namespace irods::re_serialization
         }
     }
 
+    static error serialize_keyValPair(boost::any _p, serialized_parameter_t& _out)
+    {
+        try {
+            const keyValPair_t& kvp = boost::any_cast<keyValPair_t>(_p);
+            serialize_keyValPair(kvp, _out);
+            return SUCCESS();
+        }
+        catch (const boost::bad_any_cast& e) {
+            return ERROR(INVALID_ANY_CAST, fmt::format("{}: failed to cast to [keyValPair_t]: {}", __func__, e.what()));
+        }
+        catch (const std::exception& e) {
+            return ERROR(
+                SYS_LIBRARY_ERROR, fmt::format("{}: failed to serialize [keyValPair_t]: {}", __func__, e.what()));
+        }
+    }
     static error serialize_float_ptr(
             boost::any               _p,
             serialized_parameter_t& _out) { 
@@ -1199,6 +1219,88 @@ namespace irods::re_serialization
         }
     } // serialize_vector_of_strings_ptr
 
+    // make a temporary serialize map, and move all the keys over to a "namespaced" prefix
+    static irods::error prefixed_serialize_helper(boost::any _p,
+                                                  serialized_parameter_t& _out,
+                                                  const std::string prefix = "",
+                                                  bool overwrite = false)
+    {
+        serialized_parameter_t temporary;
+        const auto err = serialize_parameter(_p, temporary);
+
+        if (!err.ok()) {
+            return err;
+        }
+
+        if (temporary.find("ERROR") != temporary.end()) {
+            _out.insert(temporary.extract("ERROR"));
+            return SUCCESS();
+        }
+
+        for (auto it = temporary.begin(); it != temporary.end();) {
+            auto node = temporary.extract(it++);
+            node.key() = overwrite ? prefix : prefix + node.key();
+            _out.insert(std::move(node));
+        }
+
+        return err;
+    } // prefixed_serialize_helper
+
+    template <typename T>
+    static irods::error serialize_generic(boost::any _p, serialized_parameter_t& _out)
+    {
+        constexpr bool isptr = std::is_pointer_v<T>;
+        int status;
+        using no_ptr = std::conditional_t<isptr, std::remove_pointer_t<T>, T>;
+        char* demangled = abi::__cxa_demangle(typeid(T).name(), NULL, NULL, &status);
+        char* demangled_noptr = abi::__cxa_demangle(typeid(no_ptr).name(), NULL, NULL, &status);
+        std::string demangled_str = std::string(demangled);
+        std::string demangled_noptr_str = std::string(demangled_str);
+        std::free(demangled);
+        std::free(demangled_noptr);
+        if (!demangled || !demangled_noptr) {
+            return ERROR(SYS_LIBRARY_ERROR, fmt::format("{}: Type name demangle failure!", __func__));
+        }
+
+        try {
+            log_re::trace(__func__);
+            auto casted_p = boost::any_cast<T>(_p);
+
+            if (std::is_pointer_v<T> && !casted_p) {
+                demangled_noptr_str = demangled_noptr_str + "_ptr";
+                _out[demangled_noptr_str] = "nullptr";
+                return SUCCESS();
+            }
+
+            irods::error err = SUCCESS();
+
+            boost::mp11::mp_for_each<boost::describe::describe_members<no_ptr, boost::describe::mod_any_access>>(
+                [&](auto D) {
+                    if (!err.ok()) {
+                        return;
+                    }
+                    bool class_check;
+                    if constexpr (std::is_pointer_v<decltype(casted_p->*D.pointer)>) {
+                        class_check = std::is_class_v<std::remove_reference_t<decltype(*(casted_p->*D.pointer))>>;
+                    }
+                    else {
+                        class_check = std::is_class_v<std::remove_reference_t<decltype(casted_p->*D.pointer)>>;
+                    }
+                    err = prefixed_serialize_helper(
+                        casted_p->*D.pointer, _out, class_check ? (std::string(D.name) + "_") : D.name, !class_check);
+                });
+            return err;
+        }
+        catch (const boost::bad_any_cast& e) {
+            return ERROR(
+                INVALID_ANY_CAST, fmt::format("{}: failed to cast pointer to [{}]: {}", __func__, demangled, e.what()));
+        }
+        catch (const std::exception& e) {
+            return ERROR(
+                SYS_LIBRARY_ERROR, fmt::format("{}: failed to serialize []: {}", __func__, demangled, e.what()));
+        }
+    }
+
 #if 0
     static error serialize_XXXX_ptr(
             boost::any               _p,
@@ -1255,7 +1357,10 @@ namespace irods::re_serialization
             {std::type_index(typeid(bytesBuf_t*)), serialize_bytesBuf_ptr},
             {std::type_index(typeid(Genquery2Input*)), serialize_Genquery2Input_ptr},
             {std::type_index(typeid(const std::vector<std::string>*)), serialize_const_vector_of_strings_ptr},
-            {std::type_index(typeid(std::vector<std::string>*)), serialize_vector_of_strings_ptr}};
+            {std::type_index(typeid(std::vector<std::string>*)), serialize_vector_of_strings_ptr},
+            {std::type_index(typeid(keyValPair_t)),
+             static_cast<error (*)(boost::any, serialized_parameter_t&)>(serialize_keyValPair)},
+            {std::type_index(typeid(structFileExtAndRegInp_t*)), serialize_generic<StructFileExtAndRegInp*>}};
         return the_map;
 
     } // get_serialization_map
