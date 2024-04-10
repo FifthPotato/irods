@@ -1250,9 +1250,8 @@ namespace irods::re_serialization
     template <typename T>
     static irods::error serialize_generic(boost::any _p, serialized_parameter_t& _out)
     {
-        constexpr bool isptr = std::is_pointer_v<T>;
-        int status;
-        using no_ptr = std::conditional_t<isptr, std::remove_pointer_t<T>, T>;
+        int status = -4;
+        using no_ptr = std::remove_pointer_t<T>;
         char* demangled = abi::__cxa_demangle(typeid(T).name(), NULL, NULL, &status);
         char* demangled_noptr = abi::__cxa_demangle(typeid(no_ptr).name(), NULL, NULL, &status);
         std::string demangled_str = std::string(demangled);
