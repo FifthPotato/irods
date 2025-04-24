@@ -47,6 +47,8 @@ namespace
 #define IRODS_DB_TRACE(msg, ...) log_db::trace("{}@{}: " msg, __func__, __LINE__ __VA_OPT__(,) __VA_ARGS__);
 } // anonymous namespace
 
+using log_sql = irods::experimental::log::sql;
+
 int _cllFreeStatementColumns( icatSessionStruct *icss, int statementNumber );
 
 int
@@ -128,7 +130,7 @@ logPsgError( int level, HENV henv, HDBC hdbc, HSTMT hstmt, int dbType ) {
                 errorVal = CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME;
             }
         }
-
+        // TODO: do I change these?
         rodsLog( level, "SQLSTATE: %s", sqlstate );
         rodsLog( level, "SQLCODE: %ld", sqlcode );
         rodsLog( level, "SQL Error message: %s", psgErrorMsg );
@@ -150,6 +152,7 @@ cllOpenEnv( icatSessionStruct *icss ) {
 
     HENV myHenv;
     if ( SQLAllocEnv( &myHenv ) != SQL_SUCCESS ) {
+        // TODO: do I change these?
         rodsLog( LOG_ERROR, "cllOpenEnv: SQLAllocHandle failed for env" );
         return -1;
     }
@@ -194,6 +197,7 @@ cllConnect( icatSessionStruct *icss ) {
     char odbcEntryName[ DB_TYPENAME_LEN ];
     char* odbc_env = getenv( "irodsOdbcDSN" );
     if ( odbc_env ) {
+        // TODO: do I change these?
         rodsLog( LOG_DEBUG, "Setting ODBC entry to ENV [%s]", odbc_env );
         snprintf( odbcEntryName, sizeof( odbcEntryName ), "%s", odbc_env );
     }
@@ -315,6 +319,7 @@ cllCheckPending( const char *sql, int option, int dbType ) {
             }
         }
 
+        // TODO: do I change these?
         rodsLog( LOG_NOTICE, "Warning, pending SQL at cllDisconnect, count: %d",
                  pendingCount );
         int max = maxPendingToRecord;
@@ -412,6 +417,7 @@ bindTheVariables( HSTMT myHstmt, const char *sql ) {
                                            SQL_CHAR, 0, 0, const_cast<char*>( cllBindVars[i] ), strlen( cllBindVars[i] ), const_cast<SQLLEN*>( &GLOBAL_SQL_NTS ) );
         char tmpStr[TMP_STR_LEN];
         snprintf( tmpStr, sizeof( tmpStr ), "bindVar[%d]=%s", i + 1, cllBindVars[i] );
+        // TODO: do I change these? (and/or its associated definition?)
         rodsLogSql( tmpStr );
         if ( stat != SQL_SUCCESS ) {
             rodsLog( LOG_ERROR,
@@ -460,7 +466,7 @@ _cllExecSqlNoResult(
     icatSessionStruct* icss,
     const char*        sql,
     int                option ) {
-    rodsLog( LOG_DEBUG10, "%s", sql );
+    log_sql::debug("{}", sql);
 
     HDBC myHdbc = icss->connectPtr;
     HSTMT myHstmt;
@@ -480,6 +486,7 @@ _cllExecSqlNoResult(
     stat = SQLExecDirect( myHstmt, ( unsigned char * )sql, strlen( sql ) );
     switch ( stat ) {
     case SQL_SUCCESS:
+        // TODO: do I change these?
         rodsLogSqlResult( "SUCCESS" );
         break;
     case SQL_SUCCESS_WITH_INFO:
@@ -576,7 +583,7 @@ cllExecSqlWithResult( icatSessionStruct *icss, int *stmtNum, const char *sql ) {
        needed here, and in fact causes postgres processes to be in the
        'idle in transaction' state which prevents some operations (such as
        backup).  So this was removed. */
-    rodsLog( LOG_DEBUG10, "%s", sql );
+    log_sql::debug("{}", sql);
 
     HDBC myHdbc = icss->connectPtr;
     HSTMT hstmt;
@@ -733,7 +740,7 @@ logBindVars(
     std::vector<std::string> &bindVars ) {
     for ( std::size_t i = 0; i < bindVars.size(); i++ ) {
         if ( !bindVars[i].empty() ) {
-            rodsLog( level, "bindVar%d=%s", i + 1, bindVars[i].c_str() );
+            log_sql::info("bindVar{}={}", i + 1, bindVars[i].c_str() );
         }
     }
 }
@@ -750,7 +757,7 @@ cllExecSqlWithResultBV(
     const char *sql,
     std::vector< std::string > &bindVars ) {
 
-    rodsLog( LOG_DEBUG10, "%s", sql );
+    log_sql::debug("{}", sql);
 
     HDBC myHdbc = icss->connectPtr;
     HSTMT hstmt;

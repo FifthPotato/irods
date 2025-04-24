@@ -214,6 +214,7 @@ int chl_general_update_impl(
            in ICAT test suite; removed since now this is only for
            extended tables and so would be difficult to test */
         if ( logSQLGenUpdate ) {
+            // TODO: do I change this?
             rodsLog( LOG_SQL, "chlGeneralUpdate sql 1" );
         }
     }

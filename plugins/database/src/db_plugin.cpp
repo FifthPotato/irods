@@ -565,6 +565,7 @@ irods::error _childIsValid(
     }
 
     // Get resource's parent
+    // TODO: should I replace this or its definition?
     irods::sql_logger logger( "_childIsValid", logSQL );
     logger.log();
     parent[0] = '\0';

@@ -30,6 +30,7 @@
 #define AUDIT_COMMENT_MAX_SIZE       1000
 
 using log_db = irods::experimental::log::database;
+using log_sql = irods::experimental::log::sql;
 
 extern int logSQL_CML;
 
@@ -166,6 +167,7 @@ int cmlGetOneRowFromSqlBV( const char *sql,
     if ( ( strstr( updatedSql, "limit " ) == NULL ) && ( strstr( updatedSql, "offset " ) == NULL ) ) {
         /* add 'limit 1' for performance improvement */
         strncat( updatedSql, " limit 1", MAX_SQL_SIZE );
+        // TODO: do I change this?
         rodsLog( LOG_DEBUG10, "cmlGetOneRowFromSqlBV %s", updatedSql );
     }
 #endif
@@ -603,7 +605,7 @@ int cmlCheckNameToken( const char *nameSpace, const char *tokenName, icatSession
     int status;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckNameToken SQL 1 " );
+        log_sql::debug("cmlCheckNameToken SQL 1 ");
     }
     std::vector<std::string> bindVars;
     bindVars.push_back( nameSpace );
@@ -628,7 +630,7 @@ int cmlModifySingleTable( const char *tableName,
     char *rsql;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlModifySingleTable SQL 1 " );
+        log_sql::debug("cmlModifySingleTable SQL 1 ");
     }
 
     snprintf( tsql, MAX_SQL_SIZE, "update %s set ", tableName );
@@ -655,7 +657,7 @@ cmlGetNextSeqVal( icatSessionStruct *icss ) {
     rodsLong_t iVal{};
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlGetNextSeqVal SQL 1 " );
+        log_sql::debug("cmlGetNextSeqVal SQL 1 ");
     }
 
     nextStr[0] = '\0';
@@ -675,6 +677,7 @@ cmlGetNextSeqVal( icatSessionStruct *icss ) {
     std::vector<std::string> emptyBindVars;
     status = cmlGetIntegerValueFromSql( sql, &iVal, emptyBindVars, icss );
     if ( status < 0 ) {
+        // TODO: do I change this?
         rodsLog( LOG_NOTICE,
                  "cmlGetNextSeqVal cmlGetIntegerValueFromSql failure %d", status );
         return status;
@@ -690,7 +693,7 @@ cmlGetCurrentSeqVal( icatSessionStruct *icss ) {
     rodsLong_t iVal;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlGetCurrentSeqVal S-Q-L 1 " );
+        log_sql::debug("cmlGetCurrentSeqVal S-Q-L 1 ");
     }
 
     nextStr[0] = '\0';
@@ -725,7 +728,7 @@ cmlGetNextSeqStr( char *seqStr, int maxSeqStrLen, icatSessionStruct *icss ) {
     int status;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlGetNextSeqStr SQL 1 " );
+        log_sql::debug("cmlGetNextSeqStr SQL 1 ");
     }
 
     nextStr[0] = '\0';
@@ -800,7 +803,7 @@ cmlCheckResc( const char *rescName, const char *userName, const char *userZone, 
     rodsLong_t iVal{};
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckResc SQL 1 " );
+        log_sql::debug("cmlCheckResc SQL 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -816,7 +819,7 @@ cmlCheckResc( const char *rescName, const char *userName, const char *userZone, 
            of the two likely cases is problem. */
 
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckResc SQL 2 " );
+            log_sql::debug("cmlCheckResc SQL 2 ");
         }
 
         bindVars.clear();
@@ -851,7 +854,7 @@ cmlCheckDir(const char *dirName,
     rodsLong_t iVal{};
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckDir SQL 1 " );
+        log_sql::debug("cmlCheckDir SQL 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -889,7 +892,7 @@ cmlCheckDir(const char *dirName,
         // of the two likely cases is the problem.
 
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDir SQL 2 " );
+            log_sql::debug("cmlCheckDir SQL 2 ");
         }
 
         bindVars.clear();
@@ -936,7 +939,7 @@ cmlCheckDirAndGetInheritFlag( const char *dirName, const char *userName, const c
 
     if ( ticketStr != NULL && *ticketStr != '\0' ) {
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDirAndGetInheritFlag SQL 1 " );
+            log_sql::debug("cmlCheckDirAndGetInheritFlag SQL 1 ");
         }
         std::vector<std::string> bindVars;
         bindVars.push_back( dirName );
@@ -946,7 +949,7 @@ cmlCheckDirAndGetInheritFlag( const char *dirName, const char *userName, const c
     }
     else {
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDirAndGetInheritFlag SQL 2 " );
+            log_sql::debug("cmlCheckDirAndGetInheritFlag SQL 2 ");
         }
         std::vector<std::string> bindVars;
         bindVars.push_back( dirName );
@@ -972,7 +975,7 @@ cmlCheckDirAndGetInheritFlag( const char *dirName, const char *userName, const c
            of the two likely cases is problem. */
 
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDirAndGetInheritFlag SQL 3 " );
+            log_sql::debug("cmlCheckDirAndGetInheritFlag SQL 3 ");
         }
 
         std::vector<std::string> bindVars;
@@ -1012,7 +1015,7 @@ cmlCheckDirId( const char *dirId, const char *userName, const char *userZone,
     rodsLong_t iVal;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckDirId S-Q-L 1 " );
+        log_sql::debug("cmlCheckDirId S-Q-L 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -1028,7 +1031,7 @@ cmlCheckDirId( const char *dirId, const char *userName, const char *userZone,
            of the two likely cases is problem. */
 
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDirId S-Q-L 2 " );
+            log_sql::debug("cmlCheckDirId S-Q-L 2 ");
         }
 
         std::vector<std::string> bindVars;
@@ -1055,7 +1058,7 @@ cmlCheckDirOwn( const char *dirName, const char *userName, const char *userZone,
     rodsLong_t iVal{};
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckDirOwn SQL 1 " );
+        log_sql::debug("cmlCheckDirOwn SQL 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -1087,7 +1090,7 @@ cmlCheckDataObjOnly(const char *dirName, const char *dataName,
     rodsLong_t iVal{};
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckDataObjOnly SQL 1 " );
+        log_sql::debug("cmlCheckDataObjOnly SQL 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -1133,7 +1136,7 @@ cmlCheckDataObjOnly(const char *dirName, const char *dataName,
         /* There was an error, so do another sql to see which
            of the two likely cases is problem. */
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDataObjOnly SQL 2 " );
+            log_sql::debug("cmlCheckDataObjOnly SQL 2 ");
         }
 
         bindVars.clear();
@@ -1165,7 +1168,7 @@ cmlCheckDataObjOwn( const char *dirName, const char *dataName, const char *userN
     char collIdStr[MAX_NAME_LEN];
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckDataObjOwn SQL 1 " );
+        log_sql::debug("cmlCheckDataObjOwn SQL 1 ");
     }
     std::vector<std::string> bindVars;
     bindVars.push_back( dirName );
@@ -1179,7 +1182,7 @@ cmlCheckDataObjOwn( const char *dirName, const char *dataName, const char *userN
     snprintf( collIdStr, MAX_NAME_LEN, "%lld", collId );
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckDataObjOwn SQL 2 " );
+        log_sql::debug("cmlCheckDataObjOwn SQL 2 ");
     }
     bindVars.clear();
     bindVars.push_back( dataName );
@@ -1204,7 +1207,7 @@ int cmlCheckUserInGroup( const char *userName, const char *userZone,
     rodsLong_t iVal;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckUserInGroup SQL 1 " );
+        log_sql::debug("cmlCheckUserInGroup SQL 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -1221,7 +1224,7 @@ int cmlCheckUserInGroup( const char *userName, const char *userZone,
     }
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckUserInGroup SQL 2 " );
+        log_sql::debug("cmlCheckUserInGroup SQL 2 ");
     }
 
     bindVars.clear();
@@ -1251,7 +1254,7 @@ cmlCheckTicketRestrictions( const char *ticketId, const char *ticketHost,
     /* first, check if there are any host restrictions, and if so
        return error if the connected client host is not in the list */
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckTicketRestrictions SQL 1" );
+        log_sql::debug("cmlCheckTicketRestrictions SQL 1");
     }
     std::vector<std::string> bindVars;
     bindVars.push_back( ticketId );
@@ -1288,7 +1291,7 @@ cmlCheckTicketRestrictions( const char *ticketId, const char *ticketHost,
 
     /* Now check on user restrictions */
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckTicketRestrictions SQL 2" );
+        log_sql::debug("cmlCheckTicketRestrictions SQL 2");
     }
     bindVars.clear();
     bindVars.push_back( ticketId );
@@ -1336,7 +1339,7 @@ cmlCheckTicketRestrictions( const char *ticketId, const char *ticketHost,
 
     /* Now check on group restrictions */
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckTicketRestrictions SQL 3" );
+        log_sql::debug("cmlCheckTicketRestrictions SQL 3");
     }
     bindVars.clear();
     bindVars.push_back( ticketId );
@@ -1399,6 +1402,7 @@ int checkObjIdByTicket(const char* dataId,
         bindVars,
         icss);
     if(0 != cml_error) {
+        // TODO: do I change this?
         rodsLog(
             LOG_ERROR,
             "failed to determine collection name for object id [%s]",
@@ -1452,7 +1456,7 @@ int checkObjIdByTicket(const char* dataId,
     // ticket stats must be checked/updated.
     if ( strncmp( accessLevel, "modify", 6 ) == 0 ) {
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "checkObjIdByTicket SQL 1 " );
+            log_sql::debug("checkObjIdByTicket SQL 1 ");
         }
 
         cVal[5] = writeFileCount;
@@ -1495,7 +1499,7 @@ int checkObjIdByTicket(const char* dataId,
 
         // Don't check ticket type, "read" or "write" is fine.
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "checkObjIdByTicket SQL 2 " );
+            log_sql::debug("checkObjIdByTicket SQL 2 ");
         }
 
         const auto zone_path = fmt::format("/{}", userZone);
@@ -1582,7 +1586,7 @@ int checkObjIdByTicket(const char* dataId,
                 cllBindVars[cllBindVarCount++] = myWriteFileCount;
                 cllBindVars[cllBindVarCount++] = ticketId;
                 if ( logSQL_CML != 0 ) {
-                    rodsLog( LOG_SQL, "checkObjIdByTicket SQL 3 " );
+                    log_sql::debug("checkObjIdByTicket SQL 3 ");
                 }
                 status = cmlExecuteNoAnswerSql("update R_TICKET_MAIN set write_file_count=? where ticket_id=?", icss);
                 // Notice we don't call commit or rollback after executing the update.
@@ -1629,7 +1633,7 @@ int checkObjIdByTicket(const char* dataId,
             cllBindVars[cllBindVarCount++] = myUsesCount;
             cllBindVars[cllBindVarCount++] = ticketId;
             if ( logSQL_CML != 0 ) {
-                rodsLog( LOG_SQL, "checkObjIdByTicket SQL 4 " );
+                log_sql::debug("checkObjIdByTicket SQL 4 ");
             }
             status = cmlExecuteNoAnswerSql("update R_TICKET_MAIN set uses_count=? where ticket_id=?", icss);
             // Notice we don't call commit or rollback after executing the update.
@@ -1695,7 +1699,7 @@ int cmlTicketUpdateWriteBytes(const char* ticketStr,
     cVal[2] = writeByteLimit;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlTicketUpdateWriteBytes SQL 1 " );
+        log_sql::debug("cmlTicketUpdateWriteBytes SQL 1 ");
     }
 
     boost::filesystem::path coll_path{original_collection_name};
@@ -1735,7 +1739,7 @@ int cmlTicketUpdateWriteBytes(const char* ticketStr,
     cllBindVars[cllBindVarCount++] = myWriteByteCount;
     cllBindVars[cllBindVarCount++] = ticketId;
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlTicketUpdateWriteBytes SQL 2 " );
+        log_sql::debug("cmlTicketUpdateWriteBytes SQL 2 ");
     }
     status = cmlExecuteNoAnswerSql("update R_TICKET_MAIN set write_byte_count=? where ticket_id=?", icss);
     // Notice we don't call commit or rollback after executing the update.
@@ -1775,7 +1779,7 @@ int cmlCheckDataObjId( const char *dataId, const char *userName,  const char *zo
     }
     else {
         if ( logSQL_CML != 0 ) {
-            rodsLog( LOG_SQL, "cmlCheckDataObjId SQL 1 " );
+            log_sql::debug("cmlCheckDataObjId SQL 1 ");
         }
         std::vector<std::string> bindVars;
         bindVars.push_back( dataId );
@@ -1808,7 +1812,7 @@ int cmlCheckGroupAdminAccess( const char *userName, const char *userZone,
     rodsLong_t iVal;
 
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckGroupAdminAccess SQL 1 " );
+        log_sql::debug("cmlCheckGroupAdminAccess SQL 1 ");
     }
 
     std::vector<std::string> bindVars;
@@ -1835,7 +1839,7 @@ int cmlCheckGroupAdminAccess( const char *userName, const char *userZone,
     }
     // =-=-=-=-=-=-=-
     if ( logSQL_CML != 0 ) {
-        rodsLog( LOG_SQL, "cmlCheckGroupAdminAccess SQL 2 " );
+        log_sql::debug("cmlCheckGroupAdminAccess SQL 2 ");
     }
 
     bindVars.clear();
