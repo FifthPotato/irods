@@ -1,7 +1,10 @@
-import os
-import sys
-import unittest
 import contextlib
+import datetime
+import os
+import re
+import sys
+import time
+import unittest
 
 from . import session
 from .. import database_connect
@@ -4454,6 +4457,89 @@ class Test_Logical_Quotas(
                     "iadmin",
                     "set_logical_quota",
                     other_subcoll_path,
+                    "0",
+                    "0",
+                ]
+            )
+
+
+    def test_logical_quota_timestamps__issue_9055(self):
+        subcoll_path = f"{self.quota_user.session_collection}/potato"
+        max_bytes = 10000
+        max_objects = 50
+
+        timestamp_regex = re.compile(r'Last modified: (.*)')
+        try:
+            self.quota_user.assert_icommand(["imkdir", subcoll_path])
+            self.admin.assert_icommand(
+                [
+                    "iadmin",
+                    "set_logical_quota",
+                    subcoll_path,
+                    str(max_bytes),
+                    str(max_objects),
+                ]
+            )
+            _, out, _ = self.admin.assert_icommand(
+                ["iadmin", "list_logical_quotas"], "STDOUT_SINGLELINE", subcoll_path
+            )
+
+            self.assertTrue(
+                (
+                    self.llq_output_template
+                    % (
+                        subcoll_path,
+                        str(max_bytes),
+                        str(max_objects),
+                        str(-max_bytes),
+                        str(-max_objects),
+                    )
+                )
+                in out
+            )
+
+            first_ts = timestamp_regex.search(out)
+
+            # Assert that we found something in "Last modified"
+            self.assertNotEqual(first_ts.group(1), None)
+
+            # Wait two seconds to induce a modify_time change
+            time.sleep(2)
+
+            self.admin.assert_icommand(["iadmin", "calculate_logical_usage"])
+
+            _, out, _ = self.admin.assert_icommand(
+                ["iadmin", "list_logical_quotas"], "STDOUT_SINGLELINE", subcoll_path
+            )
+
+            # All except timestamp should be unchanged, since nothing was added
+            self.assertTrue(
+                (
+                    self.llq_output_template
+                    % (
+                        subcoll_path,
+                        str(max_bytes),
+                        str(max_objects),
+                        str(-max_bytes),
+                        str(-max_objects),
+                    )
+                )
+                in out
+            )
+
+            second_ts = timestamp_regex.search(out)
+
+            self.assertNotEqual(second_ts.group(1), None)
+
+            # Assert that the first timestamp is before the second
+            self.assertTrue(datetime.datetime.strptime(first_ts.group(1), '%Y-%m-%d.%H:%M:%S') < datetime.datetime.strptime(second_ts.group(1), '%Y-%m-%d.%H:%M:%S'))
+
+        finally:
+            self.admin.run_icommand(
+                [
+                    "iadmin",
+                    "set_logical_quota",
+                    subcoll_path,
                     "0",
                     "0",
                 ]
